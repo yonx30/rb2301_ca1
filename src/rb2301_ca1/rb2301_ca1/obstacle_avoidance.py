@@ -25,14 +25,21 @@ class ObstacleAvoidanceNode(Node):
 
         self.timer = self.create_timer(0.05, self.timer_callback)  # Runs at 20Hz. Can be changed.
 
-    def move_2D(self, x:float=0.0, y:float=0.0, turn:float=0.0):
+    def move_2D(self, x: float = 0.0, y: float = 0.0, turn: float = 0.0):
+        """Publishes a twist command to move in 2D space. +ve x is forwards, +ve y is left, and +ve turn is anticlockwise"""
         twist_msg = Twist()
-        x = np.clip(x, -max_translate_velocity, max_translate_velocity)
-        y = np.clip(y, -max_translate_velocity, max_translate_velocity)
-        turn = np.clip(turn, -max_translate_velocity*2, max_translate_velocity*2)
-        twist_msg.linear.x, twist_msg.linear.y, twist_msg.linear.z = float(x), float(y), 0.0
-        twist_msg.angular.x, twist_msg.angular.y, twist_msg.angular.z = 0.0, 0.0, float(turn)
-        self.publisher_.publish(twist_msg)
+        # Please keep the max velocity caps to protect the irl robots
+        twist_msg.linear.x, twist_msg.linear.y, twist_msg.linear.z = (
+            min(float(x), max_translate_velocity),
+            min(float(y), max_translate_velocity),
+            0.0,
+        )
+        twist_msg.angular.x, twist_msg.angular.y, twist_msg.angular.z = (
+            0.0,
+            0.0,
+            min(float(turn), max_turn_velocity),
+        )
+        self.pub_cmd_vel.publish(twist_msg)
 
     def sub_scan_callback(self, msg):
         """Scan subscriber"""
